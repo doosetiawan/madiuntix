@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MadiunTix - Scanner App</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.bunny.net/css?family=poppins:300,400,500,600,700,800');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6C3CE1; --primary-dark: #5228C0; --primary-light: #8B5CF6;
+            --secondary: #EC4899; --accent: #06B6D4;
+            --dark: #0F0A1F; --dark-2: #1A1333; --dark-3: #251D42; --dark-4: #2D2550;
+            --text: #E2E8F0; --text-muted: #94A3B8;
+            --success: #10B981; --warning: #F59E0B; --danger: #EF4444; --info: #3B82F6;
+            --glass: rgba(255,255,255,0.05); --glass-border: rgba(255,255,255,0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Topbar Mobile Focused */
+        .topbar {
+            background: var(--dark-2);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand-area { display: flex; align-items: center; gap: 10px; }
+        .logo-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: white;
+        }
+        .brand-text h1 { font-size: 14px; font-weight: 700; margin: 0; }
+        .brand-text p { font-size: 10px; color: var(--text-muted); margin: 0; }
+
+        .btn-back {
+            background: var(--dark-3);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 4px;
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            padding: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--dark-3);
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(108, 60, 225, 0.3);
+        }
+
+        /* Scanner Viewport */
+        .scanner-card {
+            background: var(--dark-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .viewport {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #000;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Camera Corners */
+        .viewport::before {
+            content: ''; position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            z-index: 1;
+        }
+        .corner { position: absolute; width: 40px; height: 40px; border-color: var(--primary); border-style: solid; z-index: 2; }
+        .c-tl { top: 20px; left: 20px; border-width: 4px 0 0 4px; border-top-left-radius: 16px; }
+        .c-tr { top: 20px; right: 20px; border-width: 4px 4px 0 0; border-top-right-radius: 16px; }
+        .c-bl { bottom: 20px; left: 20px; border-width: 0 0 4px 4px; border-bottom-left-radius: 16px; }
+        .c-br { bottom: 20px; right: 20px; border-width: 0 4px 4px 0; border-bottom-right-radius: 16px; }
+
+        /* Scanning Line Animation */
+        .scan-line {
+            position: absolute;
+            width: calc(100% - 40px);
+            height: 2px;
+            background: var(--primary-light);
+            box-shadow: 0 0 10px var(--primary-light), 0 0 20px var(--primary);
+            left: 20px;
+            animation: scan 2s linear infinite;
+            z-index: 3;
+        }
+
+        @keyframes scan {
+            0% { top: 20px; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: calc(100% - 22px); opacity: 0; }
+        }
+
+        .camera-text { color: var(--text-muted); font-size: 13px; z-index: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;}
+        .camera-text i { font-size: 32px; color: var(--dark-4); }
+
+        /* Manual Input */
+        .form-control {
+            width: 100%; padding: 12px 14px; background: var(--dark-3);
+            border: 1px solid var(--glass-border); border-radius: 10px;
+            color: var(--text); font-family: inherit; font-size: 13px; outline: none;
+            text-align: center; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .form-control:focus { border-color: var(--primary); }
+
+        .btn-scan {
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; font-family: inherit; font-weight: 600; font-size: 14px;
+            margin-top: 10px; cursor: pointer;
+        }
+
+        /* Result Card */
+        .result-card {
+            background: var(--dark-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            display: none;
+            animation: slideUp 0.3s;
+        }
+        .result-card.show { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-box {
+            padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 16px;
+        }
+        .status-box i { font-size: 40px; margin-bottom: 8px; display: block; }
+        .status-box h3 { font-size: 18px; margin-bottom: 4px; }
+        .status-box p { font-size: 12px; opacity: 0.9; margin: 0; }
+
+        .status-success { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); }
+        .status-warning { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--warning); }
+        .status-error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); }
+
+        .ticket-detail {
+            background: var(--dark-3); padding: 16px; border-radius: 12px;
+        }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; border-bottom: 1px dashed var(--glass-border); padding-bottom: 8px;}
+        .detail-row:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0;}
+        .detail-lbl { color: var(--text-muted); }
+        .detail-val { font-weight: 600; text-align: right;}
+
+        /* Toasts */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translate(-50%, -150%);
+            background: var(--dark-2); border: 1px solid var(--glass-border);
+            border-radius: 30px; padding: 10px 20px; display: flex; align-items: center; gap: 10px;
+            z-index: 2000; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-size: 13px; font-weight: 500;
+            width: max-content; max-width: 90%;
+        }
+        .toast.show { transform: translate(-50%, 0); }
+        .toast.success { border: 1px solid var(--success); color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .toast.error { border: 1px solid var(--danger); color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .toast.warning { border: 1px solid var(--warning); color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .toast i { font-size: 18px; }
+
+        /* Simulator Buttons (For Demo) */
+        .simulator {
+            display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px;
+        }
+        .btn-sim {
+            background: var(--dark-3); border: 1px solid var(--glass-border);
+            color: var(--text-muted); padding: 6px 12px; border-radius: 20px;
+            font-size: 11px; cursor: pointer; white-space: nowrap; font-family: inherit;
+        }
+        .btn-sim:hover { background: var(--dark-4); color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="brand-area">
+            <div class="logo-icon"><i class="ri-qr-scan-2-line"></i></div>
+            <div class="brand-text">
+                <h1>MadiunTix Gate</h1>
+                <p>Scanner Apps</p>
+            </div>
+        </div>
+        <button class="btn-back"><i class="ri-arrow-left-line"></i> Dashboard</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Tabs Mode -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchMode('exchange', this)">Penukaran Tiket</button>
+            <button class="tab" onclick="switchMode('checkin', this)">Scan Kehadiran</button>
+        </div>
+
+        <!-- Scanner Card -->
+        <div class="scanner-card">
+            <div style="font-size: 12px; color:var(--text-muted); margin-bottom: 12px;" id="modeDescription">
+                Mode: Memvalidasi e-tiket untuk ditukar dengan tiket fisik/gelang.
+            </div>
+
+            <div class="viewport">
+                <div class="c-tl corner"></div>
+                <div class="c-tr corner"></div>
+                <div class="c-bl corner"></div>
+                <div class="c-br corner"></div>
+                <div class="scan-line"></div>
+                <div class="camera-text">
+                    <i class="ri-camera-off-line"></i>
+                    Kamera Aktif<br>(Simulasi)
+                </div>
+            </div>
+
+            <input type="text" id="manualInput" class="form-control" placeholder="Atau ketik ID Tiket (ex: MDN-123)" autocomplete="off">
+            <button class="btn-scan" onclick="processManualScan()">Proses Manual</button>
+        </div>
+
+        <!-- Simulator Tools (Untuk keperluan testing Anda) -->
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 10px;">Tes Skenario Cepat (Klik tombol):</div>
+        <div class="simulator">
+            <button class="btn-sim" onclick="simulateScan('MDN-111')">1. Valid (Belum Digunakan)</button>
+            <button class="btn-sim" onclick="simulateScan('MDN-222')">2. Sudah Digunakan</button>
+            <button class="btn-sim" onclick="simulateScan('MDN-000')">3. Tiket Palsu/Invalid</button>
+        </div>
+
+        <!-- Result Card -->
+        <div class="result-card" id="resultCard">
+            <div class="status-box" id="statusBox">
+                <i class="ri-check-double-line" id="statusIcon"></i>
+                <h3 id="statusTitle">Berhasil</h3>
+                <p id="statusMessage">Tiket valid dan berhasil diproses.</p>
+            </div>
+
+            <div class="ticket-detail" id="ticketDetail" style="display: none;">
+                <div class="detail-row">
+                    <span class="detail-lbl">Nama Pemesan</span>
+                    <span class="detail-val" id="resName">Budi Santoso</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">ID Tiket</span>
+                    <span class="detail-val" id="resId">MDN-111</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Tipe Tiket</span>
+                    <span class="detail-val" id="resType">VIP (Gate A)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Jumlah</span>
+                    <span class="detail-val" id="resQty">1 Tiket</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i id="toastIcon" class="ri-information-line"></i>
+        <span id="toastText">Pesan Notifikasi</span>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // --- 1. MOCK DATABASE (Simulasi Backend) ---
+        // exchanged: status penukaran fisik/gelang
+        // checkedIn: status masuk venue
+        const database = {
+            "MDN-111": { name: "Ahmad Fauzi", type: "VIP - Madiun Fest", qty: 1, exchanged: false, checkedIn: false },
+            "MDN-222": { name: "Siti Aminah", type: "Regular - Madiun Fest", qty: 2, exchanged: true, checkedIn: true }, // Sudah dipakai semua
+            "MDN-333": { name: "Rudi Hartono", type: "Festival - Konser Rhoma", qty: 1, exchanged: true, checkedIn: false } // Sudah ditukar gelang, belum masuk
+        };
+
+        let currentMode = 'exchange'; // 'exchange' (Penukaran) atau 'checkin' (Kehadiran)
+
+        // --- 2. LOGIC UI ---
+        function switchMode(mode, btnElement) {
+            currentMode = mode;
+            
+            // Ubah class active di tab
+            document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            // Ubah deskripsi
+            const desc = document.getElementById('modeDescription');
+            if(mode === 'exchange') {
+                desc.innerHTML = "Mode: Memvalidasi e-tiket untuk ditukar dengan tiket fisik/gelang.";
+            } else {
+                desc.innerHTML = "Mode: Memvalidasi gelang/tiket fisik untuk masuk ke venue.";
+            }
+
+            // Sembunyikan hasil sebelumnya
+            hideResult();
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toast.className = 'toast ' + type;
+            toastText.textContent = message;
+
+            if(type === 'success') toastIcon.className = 'ri-checkbox-circle-fill';
+            else if(type === 'warning') toastIcon.className = 'ri-error-warning-fill';
+            else if(type === 'error') toastIcon.className = 'ri-close-circle-fill';
+
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        function processManualScan() {
+            const input = document.getElementById('manualInput').value.trim().toUpperCase();
+            if(!input) {
+                showToast('Masukkan ID Tiket terlebih dahulu!', 'warning');
+                return;
+            }
+            simulateScan(input);
+            document.getElementById('manualInput').value = ''; // clear input
+        }
+
+        // --- 3. CORE SCANNER LOGIC ---
+        function simulateScan(ticketId) {
+            const data = database[ticketId];
+            
+            // SKENARIO 1: TIKET TIDAK VALID / TIDAK DITEMUKAN
+            if(!data) {
+                renderResult('error', 'Tiket Tidak Valid!', `QR Code (${ticketId}) tidak terdaftar dalam sistem.`, null);
+                showToast('Gagal! Tiket tidak valid.', 'error');
+                playSound('error');
+                return;
+            }
+
+            // Jika tiket ditemukan, kita cek modenya
+            if(currentMode === 'exchange') {
+                // LOGIC PENUKARAN TIKET
+                if(data.exchanged) {
+                    // SKENARIO 2: SUDAH DITUKAR SEBELUMNYA
+                    renderResult('warning', 'Sudah Ditukar!', 'Tiket ini sudah ditukarkan sebelumnya. Jangan berikan gelang baru.', data);
+                    showToast('Peringatan: Tiket sudah ditukar!', 'warning');
+                    playSound('warning');
+                } else {
+                    // SKENARIO 3: BERHASIL DITUKAR
+                    data.exchanged = true; // Update database (simulasi)
+                    renderResult('success', 'Penukaran Berhasil', 'E-Tiket valid. Silakan berikan tiket fisik/gelang kepada pengunjung.', data);
+                    showToast('Berhasil! Berikan tiket fisik.', 'success');
+                    playSound('success');
+                }
+            } 
+            else if (currentMode === 'checkin') {
+                // LOGIC CHECK-IN (MASUK VENUE)
+                if(data.checkedIn) {
+                    // SKENARIO 4: SUDAH MASUK VENUE
+                    renderResult('warning', 'Sudah Check-In!', 'Pengunjung ini sudah berada di dalam venue.', data);
+                    showToast('Peringatan: Pengunjung sudah masuk!', 'warning');
+                    playSound('warning');
+                } else if (!data.exchanged) {
+                    // SKENARIO 5: BELUM TUKAR GELANG TAPI MAU MASUK
+                    renderResult('error', 'Belum Tukar Gelang!', 'Harap arahkan pengunjung ke loket Penukaran Tiket terlebih dahulu.', data);
+                    showToast('Gagal! Harus tukar tiket dulu.', 'error');
+                    playSound('error');
+                } else {
+                    // SKENARIO 6: BERHASIL MASUK
+                    data.checkedIn = true; // Update database (simulasi)
+                    renderResult('success', 'Check-In Berhasil', 'Valid. Persilakan pengunjung masuk ke venue.', data);
+                    showToast('Berhasil! Silakan masuk.', 'success');
+                    playSound('success');
+                }
+            }
+
+            // Beri data ID ke object data untuk ditampilkan
+            data.id = ticketId;
+        }
+
+        function renderResult(type, title, message, data) {
+            const card = document.getElementById('resultCard');
+            const box = document.getElementById('statusBox');
+            const detail = document.getElementById('ticketDetail');
+            
+            // Set Style Box
+            box.className = 'status-box status-' + type;
+            document.getElementById('statusTitle').textContent = title;
+            document.getElementById('statusMessage').textContent = message;
+
+            // Set Icon
+            const icon = document.getElementById('statusIcon');
+            if(type === 'success') icon.className = 'ri-checkbox-circle-fill';
+            else if(type === 'warning') icon.className = 'ri-error-warning-fill';
+            else if(type === 'error') icon.className = 'ri-close-circle-fill';
+
+            // Set Data
+            if(data) {
+                detail.style.display = 'block';
+                document.getElementById('resName').textContent = data.name;
+                document.getElementById('resId').textContent = data.id;
+                document.getElementById('resType').textContent = data.type;
+                document.getElementById('resQty').textContent = data.qty + " Tiket";
+            } else {
+                detail.style.display = 'none'; // Sembunyikan detail jika invalid
+            }
+
+            // Tampilkan Card
+            card.classList.remove('show');
+            void card.offsetWidth; // trigger reflow untuk animasi ulang
+            card.classList.add('show');
+        }
+
+        function hideResult() {
+            document.getElementById('resultCard').classList.remove('show');
+        }
+
+        // --- Opsional: Fitur Suara Beep ---
+        function playSound(type) {
+            // Karena melampirkan file audio sungguhan tidak bisa di text snippet, 
+            // ini adalah placeholder jika Anda memiliki file beep.mp3 dsb.
+            // Contoh implementasi di sistem asli:
+            // let audio = new Audio(`assets/sounds/${type}.mp3`);
+            // audio.play();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,2848 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MadiunTix Admin - Organizer Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.bunny.net/css?family=poppins:300,400,500,600,700,800');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6C3CE1;
+            --primary-dark: #5228C0;
+            --primary-light: #8B5CF6;
+            --secondary: #EC4899;
+            --accent: #06B6D4;
+            --dark: #0F0A1F;
+            --dark-2: #1A1333;
+            --dark-3: #251D42;
+            --dark-4: #2D2550;
+            --text: #E2E8F0;
+            --text-muted: #94A3B8;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+            --glass: rgba(255,255,255,0.05);
+            --glass-border: rgba(255,255,255,0.1);
+            --sidebar-w: 260px;
+        }
+
+        html, body { overflow-x: hidden; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--dark); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+        /* Layout */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--dark-2);
+            border-right: 1px solid var(--glass-border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-logo {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: white;
+        }
+
+        .sidebar-brand {
+            font-size: 17px; font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-brand small {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            -webkit-text-fill-color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .sidebar-menu {
+            padding: 12px 10px;
+        }
+
+        .menu-group-title {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 14px 6px;
+            font-weight: 600;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+            position: relative;
+        }
+
+        .menu-item i { font-size: 18px; width: 20px; text-align: center; }
+
+        .menu-item:hover {
+            background: var(--glass);
+            color: var(--text);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(135deg, rgba(108, 60, 225, 0.2), rgba(236, 72, 153, 0.1));
+            color: var(--primary-light);
+            border-left: 3px solid var(--primary);
+            padding-left: 11px;
+        }
+
+        .menu-item .badge-count {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .menu-item .arrow {
+            margin-left: auto;
+            transition: transform 0.3s;
+            font-size: 14px;
+        }
+
+        .menu-item.expanded .arrow { transform: rotate(90deg); }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+            margin-left: 20px;
+            border-left: 1px solid var(--glass-border);
+        }
+
+        .submenu.open { max-height: 800px; }
+
+        .submenu .menu-item {
+            font-size: 12px;
+            padding: 8px 14px;
+        }
+
+        .submenu .menu-item i { font-size: 14px; }
+
+        /* Main */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-w);
+            min-width: 0;
+        }
+
+        /* Topbar */
+        .topbar {
+            background: var(--dark-2);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .page-title h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .page-title p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar-icon {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            background: var(--dark-3);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .topbar-icon:hover { color: var(--primary-light); background: var(--dark-4); }
+
+        .topbar-icon .notif-dot {
+            position: absolute;
+            top: 8px; right: 8px;
+            width: 8px; height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            border: 2px solid var(--dark-3);
+        }
+
+        .organizer-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px 6px 6px;
+            background: var(--dark-3);
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        .organizer-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 13px;
+        }
+
+        .organizer-info { line-height: 1.2; }
+        .organizer-info .name { font-size: 12px; font-weight: 600; }
+        .organizer-info .role { font-size: 10px; color: var(--text-muted); }
+
+        /* Content */
+        .content {
+            padding: 24px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--dark-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 100px; height: 100px;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            opacity: 0.1;
+        }
+
+        .stat-card .stat-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            margin-bottom: 14px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .stat-trend {
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-trend.up { color: var(--success); }
+        .stat-trend.down { color: var(--danger); }
+
+        .bg-primary { background: rgba(108, 60, 225, 0.15); color: var(--primary-light); }
+        .bg-success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .bg-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .bg-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .bg-info { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+        .bg-accent { background: rgba(6, 182, 212, 0.15); color: var(--accent); }
+
+        /* Card */
+        .card {
+            background: var(--dark-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title i { color: var(--primary-light); }
+
+        /* Grid */
+        .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+        /* Buttons */
+        .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(108, 60, 225, 0.4); }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--dark-3);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover { border-color: var(--primary); }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 8px; }
+        .btn-icon {
+            width: 32px; height: 32px;
+            padding: 0;
+            justify-content: center;
+            border-radius: 8px;
+            background: var(--dark-3);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+        }
+        .btn-icon:hover { color: var(--primary-light); border-color: var(--primary); }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: var(--dark-3);
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .badge-info { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+        .badge-primary { background: rgba(108, 60, 225, 0.15); color: var(--primary-light); }
+        .badge-muted { background: var(--dark-3); color: var(--text-muted); }
+
+        /* Form */
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--dark-3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus { border-color: var(--primary); }
+        textarea.form-control { resize: vertical; min-height: 80px; }
+        select.form-control { cursor: pointer; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        /* Search */
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--dark-3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 6px 12px;
+            min-width: 240px;
+        }
+
+        .search-box i { color: var(--text-muted); }
+
+        .search-box input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--dark-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: scaleIn 0.3s;
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 { font-size: 16px; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .modal-body { padding: 20px; }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Event Cards */
+        .event-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .event-card {
+            background: var(--dark-3);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .event-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .event-card-img {
+            height: 130px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px;
+            position: relative;
+        }
+
+        .event-card-img .event-status {
+            position: absolute;
+            top: 10px; right: 10px;
+        }
+
+        .event-card-body { padding: 14px; }
+
+        .event-card-body h4 {
+            font-size: 14px;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .event-card-body .meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .event-card-body .meta i { font-size: 13px; color: var(--primary-light); }
+
+        .event-card-actions {
+            display: flex;
+            gap: 6px;
+            padding: 12px 14px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .event-card-actions .btn { flex: 1; justify-content: center; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Chart */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Progress */
+        .progress-bar {
+            height: 8px;
+            background: var(--dark-3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+
+        /* Ticket Preview */
+        .ticket-preview {
+            background: linear-gradient(135deg, var(--dark-3), var(--dark-2));
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            overflow: hidden;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .ticket-preview-header {
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+        }
+
+        .ticket-preview-body { padding: 20px; }
+
+        .ticket-preview-body h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .ticket-preview-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .ticket-preview-info div {
+            background: var(--dark-3);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .ticket-preview-info .lbl {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .ticket-preview-info .val {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .ticket-preview-divider {
+            height: 20px;
+            position: relative;
+        }
+
+        .ticket-preview-divider::before {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            top: 50%;
+            border-top: 2px dashed var(--glass-border);
+        }
+
+        .ticket-preview-qr {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .qr-placeholder {
+            width: 140px; height: 140px;
+            background: white;
+            border-radius: 10px;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: var(--dark);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 2000;
+            transform: translateX(150%);
+            transition: transform 0.4s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 350px;
+        }
+
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.info { border-left: 4px solid var(--info); }
+        .toast i { font-size: 20px; }
+        .toast.success i { color: var(--success); }
+        .toast.error i { color: var(--danger); }
+        .toast.info i { color: var(--info); }
+
+        /* Activity List */
+        .activity-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .activity-item:hover { background: var(--glass); }
+
+        .activity-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .activity-content { flex: 1; min-width: 0; }
+        .activity-content .title { font-size: 13px; font-weight: 500; }
+        .activity-content .desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .activity-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+        /* Color Swatch */
+        .color-swatches {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .color-swatch {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 6px;
+            font-size: 10px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .color-swatch.active, .color-swatch:hover {
+            border-color: white;
+            transform: scale(1.05);
+        }
+
+        /* Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input { display: none; }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            background: var(--dark-4);
+            border-radius: 22px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .slider::before {
+            content: '';
+            position: absolute;
+            width: 16px; height: 16px;
+            left: 3px; top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .switch input:checked + .slider { background: var(--primary); }
+        .switch input:checked + .slider::before { transform: translateX(18px); }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .info-box i { color: var(--info); font-size: 18px; flex-shrink: 0; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .menu-toggle { display: block; }
+            .content { padding: 16px; }
+            .topbar { padding: 12px 16px; }
+            .page-title h2 { font-size: 15px; }
+            .page-title p { display: none; }
+            .organizer-info { display: none; }
+            .form-row { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .stat-card .stat-value { font-size: 18px; }
+            .search-box { min-width: 0; flex: 1; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Sidebar overlay mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+        .sidebar-overlay.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><i class="ri-ticket-2-fill"></i></div>
+                <div class="sidebar-brand">
+                    MadiunTix
+                    <small>Organizer Panel</small>
+                </div>
+            </div>
+            <nav class="sidebar-menu">
+                <div class="menu-group-title">Utama</div>
+                <div class="menu-item active" onclick="showSection('dashboard', this)">
+                    <i class="ri-dashboard-line"></i> Dashboard
+                </div>
+
+                <div class="menu-group-title">Manajemen</div>
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-calendar-event-line"></i> Acara
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('events', this)"><i class="ri-list-check-2"></i> Daftar Event</div>
+                    <div class="menu-item" onclick="showSection('event-add', this)"><i class="ri-add-line"></i> Tambah Event</div>
+                    <div class="menu-item" onclick="showSection('categories', this)"><i class="ri-price-tag-3-line"></i> Kategori</div>
+                    <div class="menu-item" onclick="showSection('schedule', this)"><i class="ri-time-line"></i> Jadwal & Rundown</div>
+                    <div class="menu-item" onclick="showSection('venue', this)"><i class="ri-map-pin-line"></i> Lokasi</div>
+                </div>
+
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-ticket-line"></i> Tiket
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('tickets', this)"><i class="ri-list-check-2"></i> Daftar Tiket</div>
+                    <div class="menu-item" onclick="showSection('ticket-add', this)"><i class="ri-add-line"></i> Tambah Tiket</div>
+                    <div class="menu-item" onclick="showSection('ticket-preview', this)"><i class="ri-eye-line"></i> Pratinjau Tiket</div>
+                </div>
+
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-shopping-bag-line"></i> Pesanan
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('orders', this)"><i class="ri-file-list-3-line"></i> Daftar Pesanan</div>
+                    <div class="menu-item" onclick="showSection('transactions', this)"><i class="ri-exchange-line"></i> Transaksi</div>
+                </div>
+
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-user-heart-line"></i> Pengunjung
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('visitors', this)"><i class="ri-database-2-line"></i> Database</div>
+                    <div class="menu-item" onclick="showSection('custom-form', this)"><i class="ri-file-edit-line"></i> Custom Form</div>
+                </div>
+
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-bank-card-line"></i> Pembayaran
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('payment', this)"><i class="ri-wallet-3-line"></i> Manajemen</div>
+                    <div class="menu-item" onclick="showSection('refund', this)"><i class="ri-refund-2-line"></i> Refund</div>
+                </div>
+
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-qr-scan-2-line"></i> Scanner & Gate
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('qr-tickets', this)"><i class="ri-qr-code-line"></i> QR Tiket</div>
+                    <div class="menu-item" onclick="showSection('officers', this)"><i class="ri-user-star-line"></i> Petugas</div>
+                    <div class="menu-item" onclick="showSection('checkin', this)"><i class="ri-check-double-line"></i> Monitoring Check-in</div>
+                </div>
+
+                <div class="menu-group-title">Laporan</div>
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-bar-chart-box-line"></i> Laporan
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('report-sales', this)"><i class="ri-line-chart-line"></i> Penjualan</div>
+                    <div class="menu-item" onclick="showSection('report-revenue', this)"><i class="ri-money-dollar-circle-line"></i> Omzet</div>
+                    <div class="menu-item" onclick="showSection('report-quota', this)"><i class="ri-pie-chart-line"></i> Sisa Kuota</div>
+                    <div class="menu-item" onclick="showSection('report-visitors', this)"><i class="ri-team-line"></i> Pengunjung</div>
+                    <div class="menu-item" onclick="showSection('report-checkin', this)"><i class="ri-calendar-check-line"></i> Check-in</div>
+                    <div class="menu-item" onclick="showSection('export', this)"><i class="ri-download-2-line"></i> Ekspor Data</div>
+                </div>
+
+                <div class="menu-group-title">Lainnya</div>
+                <div class="menu-item" onclick="showSection('vouchers', this)">
+                    <i class="ri-coupon-3-line"></i> Voucher & Promo
+                    <span class="badge-count">5</span>
+                </div>
+                <div class="menu-item" onclick="showSection('complaints', this)">
+                    <i class="ri-customer-service-2-line"></i> Pengaduan
+                    <span class="badge-count">3</span>
+                </div>
+
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-settings-3-line"></i> Pengaturan
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('setting-brand', this)"><i class="ri-palette-line"></i> Branding & Tema</div>
+                    <div class="menu-item" onclick="showSection('setting-color', this)"><i class="ri-color-filter-line"></i> Warna Aplikasi</div>
+                    <div class="menu-item" onclick="showSection('setting-info', this)"><i class="ri-information-line"></i> Halaman Info</div>
+                    <div class="menu-item" onclick="showSection('setting-terms', this)"><i class="ri-file-text-line"></i> Syarat & Ketentuan</div>
+                    <div class="menu-item" onclick="showSection('setting-faq', this)"><i class="ri-question-line"></i> FAQ</div>
+                    <div class="menu-item" onclick="showSection('setting-rundown', this)"><i class="ri-list-ordered"></i> Rundown Acara</div>
+                    <div class="menu-item" onclick="showSection('setting-notif', this)"><i class="ri-notification-3-line"></i> Template Notifikasi</div>
+                    <div class="menu-item" onclick="showSection('setting-page', this)"><i class="ri-pages-line"></i> Pratinjau Halaman</div>
+                </div>
+
+                <div class="menu-item" onclick="toggleSubmenu(this)">
+                    <i class="ri-user-settings-line"></i> Profil
+                    <i class="ri-arrow-right-s-line arrow"></i>
+                </div>
+                <div class="submenu">
+                    <div class="menu-item" onclick="showSection('profile', this)"><i class="ri-user-line"></i> Profil Organizer</div>
+                    <div class="menu-item" onclick="showSection('password', this)"><i class="ri-lock-line"></i> Ubah Password</div>
+                    <div class="menu-item" onclick="showSection('activity-log', this)"><i class="ri-history-line"></i> Riwayat Aktivitas</div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main -->
+        <div class="main-content">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()"><i class="ri-menu-line"></i></button>
+                    <div class="page-title">
+                        <h2 id="pageTitle">Dashboard</h2>
+                        <p id="pageSubtitle">Selamat datang kembali, Organizer!</p>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-icon" onclick="showToast('Tidak ada notifikasi baru', 'info')">
+                        <i class="ri-notification-3-line"></i>
+                        <span class="notif-dot"></span>
+                    </div>
+                    <div class="topbar-icon" onclick="showToast('Pesan masuk: 2', 'info')">
+                        <i class="ri-message-3-line"></i>
+                    </div>
+                    <div class="organizer-profile" onclick="showSection('profile', document.querySelector('.menu-item'))">
+                        <div class="organizer-avatar">MD</div>
+                        <div class="organizer-info">
+                            <div class="name">Madiun Event</div>
+                            <div class="role">Organizer</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- DASHBOARD -->
+                <div class="section active" id="section-dashboard">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-primary"><i class="ri-money-dollar-circle-line"></i></div>
+                            <div class="stat-label">Total Omzet</div>
+                            <div class="stat-value">Rp 247,5 Jt</div>
+                            <div class="stat-trend up"><i class="ri-arrow-up-line"></i> +12,5% dari bulan lalu</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-success"><i class="ri-ticket-line"></i></div>
+                            <div class="stat-label">Tiket Terjual</div>
+                            <div class="stat-value">3.847</div>
+                            <div class="stat-trend up"><i class="ri-arrow-up-line"></i> +8,2% dari bulan lalu</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-warning"><i class="ri-archive-line"></i></div>
+                            <div class="stat-label">Sisa Kuota</div>
+                            <div class="stat-value">1.253</div>
+                            <div class="stat-trend down"><i class="ri-arrow-down-line"></i> -15,3% tersisa</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-info"><i class="ri-calendar-event-line"></i></div>
+                            <div class="stat-label">Event Aktif</div>
+                            <div class="stat-value">9</div>
+                            <div class="stat-trend up"><i class="ri-arrow-up-line"></i> 3 event akan datang</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="ri-line-chart-line"></i> Grafik Tren Penjualan Tiket</div>
+                                <select class="form-control" style="width:auto;">
+                                    <option>7 Hari Terakhir</option>
+                                    <option>30 Hari Terakhir</option>
+                                    <option>3 Bulan Terakhir</option>
+                                    <option>1 Tahun</option>
+                                </select>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="salesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="ri-pie-chart-line"></i> Distribusi Kategori</div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="ri-fire-line"></i> Event Terlaris</div>
+                                <button class="btn btn-secondary btn-sm">Lihat Semua</button>
+                            </div>
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Event</th>
+                                            <th>Terjual</th>
+                                            <th>Omzet</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Madiun Music Festival</strong></td>
+                                            <td>1.240</td>
+                                            <td>Rp 186 Jt</td>
+                                            <td><span class="badge badge-success">Aktif</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Konser Rhoma Irama</strong></td>
+                                            <td>890</td>
+                                            <td>Rp 267 Jt</td>
+                                            <td><span class="badge badge-success">Aktif</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>EDM Night: Bass Drop</strong></td>
+                                            <td>654</td>
+                                            <td>Rp 114 Jt</td>
+                                            <td><span class="badge badge-warning">Segera</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Persik vs Arema</strong></td>
+                                            <td>520</td>
+                                            <td>Rp 52 Jt</td>
+                                            <td><span class="badge badge-success">Aktif</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Reog Ponorogo Night</strong></td>
+                                            <td>345</td>
+                                            <td>Rp 24 Jt</td>
+                                            <td><span class="badge badge-success">Aktif</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="ri-history-line"></i> Aktivitas Terbaru</div>
+                            </div>
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-success"><i class="ri-shopping-cart-line"></i></div>
+                                    <div class="activity-content">
+                                        <div class="title">Pesanan baru #TRX-8842</div>
+                                        <div class="desc">Budi Santoso membeli 2x VIP</div>
+                                    </div>
+                                    <div class="activity-time">2m lalu</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-primary"><i class="ri-check-double-line"></i></div>
+                                    <div class="activity-content">
+                                        <div class="title">Check-in berhasil</div>
+                                        <div class="desc">15 pengunjung masuk venue</div>
+                                    </div>
+                                    <div class="activity-time">15m lalu</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-info"><i class="ri-user-add-line"></i></div>
+                                    <div class="activity-content">
+                                        <div class="title">Pengunjung baru terdaftar</div>
+                                        <div class="desc">Siti Aminah via email</div>
+                                    </div>
+                                    <div class="activity-time">1j lalu</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-warning"><i class="ri-refund-2-line"></i></div>
+                                    <div class="activity-content">
+                                        <div class="title">Permintaan refund</div>
+                                        <div class="desc">Menunggu persetujuan</div>
+                                    </div>
+                                    <div class="activity-time">2j lalu</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon bg-danger"><i class="ri-error-warning-line"></i></div>
+                                    <div class="activity-content">
+                                        <div class="title">Pengaduan baru</div>
+                                        <div class="desc">Tiket tidak diterima</div>
+                                    </div>
+                                    <div class="activity-time">3j lalu</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EVENTS LIST -->
+                <div class="section" id="section-events">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-calendar-event-line"></i> Manajemen Acara</div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <div class="search-box">
+                                    <i class="ri-search-line"></i>
+                                    <input type="text" placeholder="Cari event...">
+                                </div>
+                                <button class="btn btn-gradient" onclick="showSection('event-add')"><i class="ri-add-line"></i> Tambah Event</button>
+                            </div>
+                        </div>
+                        <div class="event-grid" id="eventGrid"></div>
+                    </div>
+                </div>
+
+                <!-- ADD EVENT -->
+                <div class="section" id="section-event-add">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-add-line"></i> Tambah Event Baru</div>
+                        </div>
+                        <div class="info-box">
+                            <i class="ri-information-line"></i>
+                            <div>Lengkapi semua informasi event di bawah ini. Pastikan data akurat karena akan ditampilkan ke pengguna.</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Event *</label>
+                                <input type="text" class="form-control" placeholder="Contoh: Madiun Music Festival 2025">
+                            </div>
+                            <div class="form-group">
+                                <label>Kategori *</label>
+                                <select class="form-control">
+                                    <option>Pilih kategori</option>
+                                    <option>Konser</option>
+                                    <option>Festival</option>
+                                    <option>Seminar</option>
+                                    <option>Olahraga</option>
+                                    <option>Teater</option>
+                                    <option>Komedi</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi Event *</label>
+                            <textarea class="form-control" placeholder="Jelaskan detail event..."></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tanggal Mulai *</label>
+                                <input type="date" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal Selesai *</label>
+                                <input type="date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Waktu Mulai *</label>
+                                <input type="time" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Waktu Selesai *</label>
+                                <input type="time" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Lokasi Event *</label>
+                            <input type="text" class="form-control" placeholder="Nama venue">
+                        </div>
+                        <div class="form-group">
+                            <label>Alamat Lengkap *</label>
+                            <textarea class="form-control" placeholder="Alamat lengkap venue"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Kota *</label>
+                                <input type="text" class="form-control" value="Madiun">
+                            </div>
+                            <div class="form-group">
+                                <label>Kapasitas Venue</label>
+                                <input type="number" class="form-control" placeholder="Contoh: 5000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Poster Event</label>
+                            <input type="file" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox"> Tampilkan event di halaman utama
+                            </label>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button class="btn btn-secondary">Batal</button>
+                            <button class="btn btn-primary" onclick="showToast('Event berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan Event</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CATEGORIES -->
+                <div class="section" id="section-categories">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-price-tag-3-line"></i> Manajemen Kategori Event</div>
+                            <button class="btn btn-gradient" onclick="openModal('modalCategory')"><i class="ri-add-line"></i> Tambah Kategori</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama Kategori</th>
+                                        <th>Icon</th>
+                                        <th>Jumlah Event</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>1</td><td>Konser</td><td><i class="ri-music-2-fill" style="color:#EC4899"></i></td><td>24</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>2</td><td>Festival</td><td><i class="ri-fire-fill" style="color:#F59E0B"></i></td><td>18</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>3</td><td>Seminar</td><td><i class="ri-microphone-fill" style="color:#06B6D4"></i></td><td>15</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>4</td><td>Olahraga</td><td><i class="ri-football-fill" style="color:#10B981"></i></td><td>12</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>5</td><td>Teater</td><td><i class="ri-drama-fill" style="color:#8B5CF6"></i></td><td>8</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>6</td><td>Komedi</td><td><i class="ri-emotion-laugh-fill" style="color:#EF4444"></i></td><td>10</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCHEDULE -->
+                <div class="section" id="section-schedule">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-time-line"></i> Pengaturan Jadwal & Rundown Acara</div>
+                            <button class="btn btn-gradient"><i class="ri-add-line"></i> Tambah Rundown</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Pilih Event</label>
+                            <select class="form-control">
+                                <option>Madiun Music Festival 2025</option>
+                                <option>Konser Rhoma Irama & Soneta</option>
+                                <option>EDM Night: Bass Drop Madiun</option>
+                            </select>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr><th>Waktu</th><th>Acara</th><th>Pengisi</th><th>Stage</th><th>Aksi</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>16:00 - 16:30</td><td>Opening Ceremony</td><td>MC Event</td><td>Main Stage</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>16:30 - 17:30</td><td>Local Band Performance</td><td>Band Madiun</td><td>Main Stage</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>17:30 - 18:30</td><td>Headliner 1</td><td>Sheila on 7</td><td>Main Stage</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>19:00 - 20:30</td><td>Headliner 2</td><td>Dewa 19</td><td>Main Stage</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>20:30 - 22:00</td><td>Headliner 3</td><td>Noah</td><td>Main Stage</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>22:00 - 23:00</td><td>After Party DJ</td><td>DJ Lokal</td><td>Side Stage</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VENUE -->
+                <div class="section" id="section-venue">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-map-pin-line"></i> Pengaturan Lokasi Event</div>
+                            <button class="btn btn-gradient"><i class="ri-add-line"></i> Tambah Lokasi</button>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Venue</label>
+                                <input type="text" class="form-control" value="Alun-Alun Madiun">
+                            </div>
+                            <div class="form-group">
+                                <label>Kapasitas</label>
+                                <input type="number" class="form-control" value="5000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Alamat</label>
+                            <textarea class="form-control">Jl. Alun-Alun Timur, Kota Madiun, Jawa Timur</textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Latitude</label>
+                                <input type="text" class="form-control" value="-7.6298">
+                            </div>
+                            <div class="form-group">
+                                <label>Longitude</label>
+                                <input type="text" class="form-control" value="111.5230">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Google Maps Embed URL</label>
+                            <input type="text" class="form-control" placeholder="https://maps.google.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Fasilitas Venue</label>
+                            <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);"><input type="checkbox" checked> Parkir</label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);"><input type="checkbox" checked> Toilet</label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);"><input type="checkbox" checked> Mushola</label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);"><input type="checkbox" checked> Food Court</label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);"><input type="checkbox"> WiFi</label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text);"><input type="checkbox"> AC</label>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-primary" onclick="showToast('Lokasi berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TICKETS LIST -->
+                <div class="section" id="section-tickets">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-ticket-line"></i> Manajemen Jenis Tiket</div>
+                            <button class="btn btn-gradient" onclick="showSection('ticket-add')"><i class="ri-add-line"></i> Tambah Tiket</button>
+                        </div>
+                        <div class="tabs">
+                            <button class="tab active">Semua</button>
+                            <button class="tab">Madiun Music Festival</button>
+                            <button class="tab">Konser Rhoma Irama</button>
+                            <button class="tab">EDM Night</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr><th>Nama Tiket</th><th>Event</th><th>Harga</th><th>Kuota</th><th>Terjual</th><th>Periode</th><th>Status</th><th>Aksi</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>Regular</strong></td><td>Music Festival</td><td>Rp 150.000</td><td>2000</td><td>1240 <div class="progress-bar"><div class="progress-fill" style="width:62%"></div></div></td><td>1 Jul - 14 Ags</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-file-copy-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>VIP</strong></td><td>Music Festival</td><td>Rp 350.000</td><td>500</td><td>380 <div class="progress-bar"><div class="progress-fill" style="width:76%"></div></div></td><td>1 Jul - 14 Ags</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-file-copy-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>VVIP</strong></td><td>Music Festival</td><td>Rp 750.000</td><td>100</td><td>95 <div class="progress-bar"><div class="progress-fill" style="width:95%"></div></div></td><td>1 Jul - 10 Ags</td><td><span class="badge badge-warning">Hampir Habis</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-file-copy-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>Festival</strong></td><td>Konser Rhoma</td><td>Rp 200.000</td><td>1500</td><td>890 <div class="progress-bar"><div class="progress-fill" style="width:59%"></div></div></td><td>1 Ags - 21 Sep</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-file-copy-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>Tribun A</strong></td><td>Konser Rhoma</td><td>Rp 400.000</td><td>400</td><td>245 <div class="progress-bar"><div class="progress-fill" style="width:61%"></div></div></td><td>1 Ags - 21 Sep</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-file-copy-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ADD TICKET -->
+                <div class="section" id="section-ticket-add">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-add-line"></i> Tambah Tiket Baru</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Event *</label>
+                            <select class="form-control">
+                                <option>Pilih event</option>
+                                <option>Madiun Music Festival 2025</option>
+                                <option>Konser Rhoma Irama & Soneta</option>
+                                <option>EDM Night: Bass Drop Madiun</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Tiket *</label>
+                                <input type="text" class="form-control" placeholder="Contoh: VIP">
+                            </div>
+                            <div class="form-group">
+                                <label>Harga (Rp) *</label>
+                                <input type="number" class="form-control" placeholder="150000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi Tiket</label>
+                            <textarea class="form-control" placeholder="Benefit yang didapat pembeli..."></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Kuota / Stok *</label>
+                                <input type="number" class="form-control" placeholder="1000">
+                            </div>
+                            <div class="form-group">
+                                <label>Batas Pembelian per Orang</label>
+                                <input type="number" class="form-control" value="5">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mulai Jual *</label>
+                                <input type="datetime-local" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Berakhir Jual *</label>
+                                <input type="datetime-local" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Status Tiket</label>
+                            <select class="form-control">
+                                <option>Aktif - Dapat dibeli</option>
+                                <option>Segera Hadir - Coming Soon</option>
+                                <option>Habis - Sold Out</option>
+                                <option>Tidak Aktif - Draft</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox"> Tampilkan sebagai "Hot" / "Best Seller"
+                            </label>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button class="btn btn-secondary">Batal</button>
+                            <button class="btn btn-primary" onclick="showToast('Tiket berhasil ditambahkan!', 'success')"><i class="ri-save-line"></i> Simpan Tiket</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TICKET PREVIEW -->
+                <div class="section" id="section-ticket-preview">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-eye-line"></i> Pratinjau Tiket Digital</div>
+                            <select class="form-control" style="width:auto;">
+                                <option>Madiun Music Festival - VIP</option>
+                                <option>Konser Rhoma Irama - Festival</option>
+                                <option>EDM Night - General</option>
+                            </select>
+                        </div>
+                        <div class="ticket-preview">
+                            <div class="ticket-preview-header">🎵</div>
+                            <div class="ticket-preview-body">
+                                <h3>Madiun Music Festival 2025</h3>
+                                <div class="ticket-preview-info">
+                                    <div><div class="lbl">Tanggal</div><div class="val">15 Agustus 2025</div></div>
+                                    <div><div class="lbl">Waktu</div><div class="val">16:00 - 23:00</div></div>
+                                    <div><div class="lbl">Lokasi</div><div class="val">Alun-Alun Madiun</div></div>
+                                    <div><div class="lbl">Tipe</div><div class="val">VIP</div></div>
+                                </div>
+                            </div>
+                            <div class="ticket-preview-divider"></div>
+                            <div class="ticket-preview-qr">
+                                <div class="qr-placeholder"><i class="ri-qr-code-line"></i></div>
+                                <div style="font-size:11px; color:var(--text-muted);">Scan untuk masuk venue</div>
+                                <div style="font-family:monospace; font-size:12px; margin-top:6px; letter-spacing:2px;">MDN-X8K2-9PQM</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORDERS -->
+                <div class="section" id="section-orders">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-file-list-3-line"></i> Manajemen Pesanan</div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <div class="search-box"><i class="ri-search-line"></i><input type="text" placeholder="Cari order..."></div>
+                                <select class="form-control" style="width:auto;"><option>Semua Status</option><option>Pending</option><option>Paid</option><option>Cancelled</option></select>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr><th>Order ID</th><th>Pembeli</th><th>Event</th><th>Tiket</th><th>Qty</th><th>Total</th><th>Tanggal</th><th>Status</th><th>Aksi</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>#TRX-8842</strong></td><td>Budi Santoso</td><td>Music Festival</td><td>VIP</td><td>2</td><td>Rp 710.500</td><td>15 Jul 2025</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td><strong>#TRX-8841</strong></td><td>Siti Aminah</td><td>Konser Rhoma</td><td>Tribun A</td><td>1</td><td>Rp 420.000</td><td>15 Jul 2025</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td><strong>#TRX-8840</strong></td><td>Andi Wijaya</td><td>EDM Night</td><td>General</td><td>3</td><td>Rp 535.500</td><td>14 Jul 2025</td><td><span class="badge badge-warning">Pending</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td><strong>#TRX-8839</strong></td><td>Dewi Lestari</td><td>Music Festival</td><td>Regular</td><td>4</td><td>Rp 633.000</td><td>14 Jul 2025</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td><strong>#TRX-8838</strong></td><td>Rudi Hartono</td><td>Persik vs Arema</td><td>VIP</td><td>2</td><td>Rp 407.500</td><td>13 Jul 2025</td><td><span class="badge badge-danger">Cancelled</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td><strong>#TRX-8837</strong></td><td>Maya Sari</td><td>Reog Night</td><td>VIP</td><td>1</td><td>Rp 126.000</td><td>13 Jul 2025</td><td><span class="badge badge-success">Paid</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRANSACTIONS -->
+                <div class="section" id="section-transactions">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-exchange-line"></i> Riwayat Transaksi</div>
+                            <button class="btn btn-secondary"><i class="ri-download-2-line"></i> Ekspor CSV</button>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-icon bg-success"><i class="ri-money-dollar-circle-line"></i></div><div class="stat-label">Total Transaksi Hari Ini</div><div class="stat-value">Rp 12,4 Jt</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-info"><i class="ri-exchange-line"></i></div><div class="stat-label">Jumlah Transaksi</div><div class="stat-value">47</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-primary"><i class="ri-avg-line"></i></div><div class="stat-label">Rata-rata per Transaksi</div><div class="stat-value">Rp 263 Rb</div></div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID Transaksi</th><th>Metode</th><th>Total</th><th>Status</th><th>Waktu</th></tr></thead>
+                                <tbody>
+                                    <tr><td>TXN-001247</td><td>GoPay</td><td>Rp 710.500</td><td><span class="badge badge-success">Success</span></td><td>15 Jul 14:32</td></tr>
+                                    <tr><td>TXN-001246</td><td>BCA VA</td><td>Rp 420.000</td><td><span class="badge badge-success">Success</span></td><td>15 Jul 13:18</td></tr>
+                                    <tr><td>TXN-001245</td><td>OVO</td><td>Rp 535.500</td><td><span class="badge badge-warning">Pending</span></td><td>15 Jul 12:45</td></tr>
+                                    <tr><td>TXN-001244</td><td>Indomaret</td><td>Rp 633.000</td><td><span class="badge badge-success">Success</span></td><td>15 Jul 11:20</td></tr>
+                                    <tr><td>TXN-001243</td><td>Mandiri VA</td><td>Rp 407.500</td><td><span class="badge badge-danger">Failed</span></td><td>15 Jul 10:05</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VISITORS -->
+                <div class="section" id="section-visitors">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-database-2-line"></i> Database Pengunjung</div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <div class="search-box"><i class="ri-search-line"></i><input type="text" placeholder="Cari pengunjung..."></div>
+                                <button class="btn btn-secondary"><i class="ri-file-excel-2-line"></i> Ekspor Excel</button>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <i class="ri-information-line"></i>
+                            <div>Data pengunjung dikumpulkan dari form pendaftaran: Nama, WhatsApp, Email, NIK, Instansi/Komunitas.</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr><th>Nama</th><th>WhatsApp</th><th>Email</th><th>NIK</th><th>Instansi</th><th>Total Order</th><th>Event Terakhir</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>Budi Santoso</strong></td><td>081234567890</td><td>budi@mail.com</td><td>35**1234</td><td>UMM</td><td>5</td><td>Music Festival</td></tr>
+                                    <tr><td><strong>Siti Aminah</strong></td><td>081298765432</td><td>siti@mail.com</td><td>35**5678</td><td>Umum</td><td>3</td><td>Konser Rhoma</td></tr>
+                                    <tr><td><strong>Andi Wijaya</strong></td><td>081345678901</td><td>andi@mail.com</td><td>35**9012</td><td>STMIK</td><td>8</td><td>EDM Night</td></tr>
+                                    <tr><td><strong>Dewi Lestari</strong></td><td>081456789012</td><td>dewi@mail.com</td><td>35**3456</td><td>Komunitas Musik</td><td>12</td><td>Music Festival</td></tr>
+                                    <tr><td><strong>Rudi Hartono</strong></td><td>081567890123</td><td>rudi@mail.com</td><td>35**7890</td><td>Viking FC</td><td>4</td><td>Persik vs Arema</td></tr>
+                                    <tr><td><strong>Maya Sari</strong></td><td>081678901234</td><td>maya@mail.com</td><td>35**2345</td><td>Sanggar Reog</td><td>6</td><td>Reog Night</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CUSTOM FORM -->
+                <div class="section" id="section-custom-form">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-file-edit-line"></i> Manajemen Custom Form Pendaftaran</div>
+                            <button class="btn btn-gradient"><i class="ri-add-line"></i> Tambah Field</button>
+                        </div>
+                        <div class="info-box">
+                            <i class="ri-information-line"></i>
+                            <div>Field default: Nama, WhatsApp, Email, NIK. Anda dapat menambahkan field custom sesuai kebutuhan event.</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Nama Field</th><th>Tipe</th><th>Wajib</th><th>Urutan</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Nama Lengkap</td><td>Text</td><td><span class="badge badge-success">Ya</span></td><td>1</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button></td></tr>
+                                    <tr><td>Nomor WhatsApp</td><td>Phone</td><td><span class="badge badge-success">Ya</span></td><td>2</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button></td></tr>
+                                    <tr><td>Email</td><td>Email</td><td><span class="badge badge-success">Ya</span></td><td>3</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button></td></tr>
+                                    <tr><td>NIK / Identitas</td><td>Number</td><td><span class="badge badge-success">Ya</span></td><td>4</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button></td></tr>
+                                    <tr><td>Asal Instansi / Komunitas</td><td>Text</td><td><span class="badge badge-warning">Tidak</span></td><td>5</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>Ukuran Jersey</td><td>Select</td><td><span class="badge badge-warning">Tidak</span></td><td>6</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>Alamat Lengkap</td><td>Textarea</td><td><span class="badge badge-warning">Tidak</span></td><td>7</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAYMENT -->
+                <div class="section" id="section-payment">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-wallet-3-line"></i> Manajemen Pembayaran</div>
+                        </div>
+                        <div class="tabs">
+                            <button class="tab active">Metode Aktif</button>
+                            <button class="tab">Riwayat Transaksi</button>
+                            <button class="tab">Rekonsiliasi</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Metode</th><th>Kategori</th><th>Biaya Admin</th><th>Status</th><th>Total Transaksi</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>GoPay</strong></td><td>E-Wallet</td><td>Rp 1.500</td><td><span class="badge badge-success">Aktif</span></td><td>234</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>OVO</strong></td><td>E-Wallet</td><td>Rp 1.500</td><td><span class="badge badge-success">Aktif</span></td><td>187</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>DANA</strong></td><td>E-Wallet</td><td>Rp 1.500</td><td><span class="badge badge-success">Aktif</span></td><td>156</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>BCA VA</strong></td><td>Bank Transfer</td><td>Rp 2.500</td><td><span class="badge badge-success">Aktif</span></td><td>412</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>BRI VA</strong></td><td>Bank Transfer</td><td>Rp 2.500</td><td><span class="badge badge-success">Aktif</span></td><td>298</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>Mandiri VA</strong></td><td>Bank Transfer</td><td>Rp 2.500</td><td><span class="badge badge-success">Aktif</span></td><td>267</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>Indomaret</strong></td><td>Minimarket</td><td>Rp 5.000</td><td><span class="badge badge-success">Aktif</span></td><td>145</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>Alfamart</strong></td><td>Minimarket</td><td>Rp 5.000</td><td><span class="badge badge-success">Aktif</span></td><td>132</td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr>
+                                    <tr><td><strong>QRIS</strong></td><td>QR Payment</td><td>Rp 1.000</td><td><span class="badge badge-muted">Nonaktif</span></td><td>0</td><td><label class="switch"><input type="checkbox"><span class="slider"></span></label></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REFUND -->
+                <div class="section" id="section-refund">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-refund-2-line"></i> Manajemen Refund</div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-icon bg-warning"><i class="ri-time-line"></i></div><div class="stat-label">Menunggu Approval</div><div class="stat-value">7</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-success"><i class="ri-check-line"></i></div><div class="stat-label">Disetujui (Bulan ini)</div><div class="stat-value">23</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-danger"><i class="ri-close-line"></i></div><div class="stat-label">Ditolak</div><div class="stat-value">4</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-info"><i class="ri-money-dollar-circle-line"></i></div><div class="stat-label">Total Refund</div><div class="stat-value">Rp 8,2 Jt</div></div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID Refund</th><th>Order ID</th><th>Pembeli</th><th>Alasan</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td>#RFD-201</td><td>#TRX-8820</td><td>Agus Prabowo</td><td>Sakit mendadak</td><td>Rp 350.000</td><td><span class="badge badge-warning">Pending</span></td><td><button class="btn btn-success btn-sm">Approve</button> <button class="btn btn-danger btn-sm">Reject</button></td></tr>
+                                    <tr><td>#RFD-200</td><td>#TRX-8815</td><td>Lina Marlina</td><td>Perubahan jadwal</td><td>Rp 150.000</td><td><span class="badge badge-warning">Pending</span></td><td><button class="btn btn-success btn-sm">Approve</button> <button class="btn btn-danger btn-sm">Reject</button></td></tr>
+                                    <tr><td>#RFD-199</td><td>#TRX-8800</td><td>Hendra K.</td><td>Double payment</td><td>Rp 400.000</td><td><span class="badge badge-success">Approved</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td>#RFD-198</td><td>#TRX-8795</td><td>Sri Mulyani</td><td>Tiket tidak diterima</td><td>Rp 750.000</td><td><span class="badge badge-success">Approved</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td>#RFD-197</td><td>#TRX-8780</td><td>Bambang S.</td><td>Salah pilih tanggal</td><td>Rp 200.000</td><td><span class="badge badge-danger">Rejected</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR TICKETS -->
+                <div class="section" id="section-qr-tickets">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-qr-code-line"></i> Manajemen QR Tiket</div>
+                            <button class="btn btn-secondary"><i class="ri-download-2-line"></i> Bulk Download</button>
+                        </div>
+                        <div class="info-box">
+                            <i class="ri-information-line"></i>
+                            <div>Setiap tiket yang terjual memiliki QR Code unik. QR ini digunakan oleh petugas scanner untuk validasi check-in.</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>QR ID</th><th>Order ID</th><th>Pemegang</th><th>Event</th><th>Tipe</th><th>Status</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td><code>QR-8842-01</code></td><td>#TRX-8842</td><td>Budi Santoso</td><td>Music Festival</td><td>VIP</td><td><span class="badge badge-muted">Belum Scan</span></td><td><button class="btn btn-icon"><i class="ri-qr-code-line"></i></button> <button class="btn btn-icon"><i class="ri-download-line"></i></button></td></tr>
+                                    <tr><td><code>QR-8842-02</code></td><td>#TRX-8842</td><td>Budi Santoso</td><td>Music Festival</td><td>VIP</td><td><span class="badge badge-success">Tervalidasi</span></td><td><button class="btn btn-icon"><i class="ri-qr-code-line"></i></button> <button class="btn btn-icon"><i class="ri-download-line"></i></button></td></tr>
+                                    <tr><td><code>QR-8841-01</code></td><td>#TRX-8841</td><td>Siti Aminah</td><td>Konser Rhoma</td><td>Tribun A</td><td><span class="badge badge-muted">Belum Scan</span></td><td><button class="btn btn-icon"><i class="ri-qr-code-line"></i></button> <button class="btn btn-icon"><i class="ri-download-line"></i></button></td></tr>
+                                    <tr><td><code>QR-8839-01</code></td><td>#TRX-8839</td><td>Dewi Lestari</td><td>Music Festival</td><td>Regular</td><td><span class="badge badge-success">Tervalidasi</span></td><td><button class="btn btn-icon"><i class="ri-qr-code-line"></i></button> <button class="btn btn-icon"><i class="ri-download-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OFFICERS -->
+                <div class="section" id="section-officers">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-user-star-line"></i> Manajemen Petugas Scanner & Gate</div>
+                            <button class="btn btn-gradient"><i class="ri-add-line"></i> Tambah Petugas</button>
+                        </div>
+                        <div class="tabs">
+                            <button class="tab active">Petugas Scanner</button>
+                            <button class="tab">Petugas Gate</button>
+                            <button class="tab">Pengaturan Akses</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Nama</th><th>Email</th><th>Gate Assigned</th><th>Check-in Hari Ini</th><th>Status</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Ahmad Fauzi</strong></td><td>ahmad@madiuntix.id</td><td>Gate A - VIP</td><td>124</td><td><span class="badge badge-success">Online</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>Rina Wulandari</strong></td><td>rina@madiuntix.id</td><td>Gate B - Regular</td><td>287</td><td><span class="badge badge-success">Online</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>Joko Susilo</strong></td><td>joko@madiuntix.id</td><td>Gate C - General</td><td>198</td><td><span class="badge badge-muted">Offline</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>Sari Dewi</strong></td><td>sari@madiuntix.id</td><td>Gate D - VVIP</td><td>45</td><td><span class="badge badge-success">Online</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHECK-IN -->
+                <div class="section" id="section-checkin">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-check-double-line"></i> Monitoring Check-in Realtime</div>
+                            <button class="btn btn-secondary"><i class="ri-refresh-line"></i> Refresh</button>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-icon bg-success"><i class="ri-user-follow-line"></i></div><div class="stat-label">Total Check-in</div><div class="stat-value">1.247</div><div class="stat-trend up">dari 3.847 tiket terjual</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-info"><i class="ri-percent-line"></i></div><div class="stat-label">Persentase Kehadiran</div><div class="stat-value">32,4%</div><div class="stat-trend up">+2,1% / jam</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-warning"><i class="ri-time-line"></i></div><div class="stat-label">Rata-rata / Jam</div><div class="stat-value">186</div><div class="stat-trend up">Check-in per jam</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-primary"><i class="ri-door-line"></i></div><div class="stat-label">Gate Aktif</div><div class="stat-value">4</div><div class="stat-trend up">Semua gate online</div></div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="card" style="margin-bottom:0;">
+                                <div class="card-header"><div class="card-title">Check-in per Gate</div></div>
+                                <div style="display:flex; flex-direction:column; gap:14px;">
+                                    <div>
+                                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Gate A - VIP</span><span>124 / 380</span></div>
+                                        <div class="progress-bar"><div class="progress-fill" style="width:32%"></div></div>
+                                    </div>
+                                    <div>
+                                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Gate B - Regular</span><span>287 / 1240</span></div>
+                                        <div class="progress-bar"><div class="progress-fill" style="width:23%"></div></div>
+                                    </div>
+                                    <div>
+                                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Gate C - General</span><span>198 / 890</span></div>
+                                        <div class="progress-bar"><div class="progress-fill" style="width:22%"></div></div>
+                                    </div>
+                                    <div>
+                                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Gate D - VVIP</span><span>45 / 95</span></div>
+                                        <div class="progress-bar"><div class="progress-fill" style="width:47%"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card" style="margin-bottom:0;">
+                                <div class="card-header"><div class="card-title">Aktivitas Check-in Terbaru</div></div>
+                                <div class="activity-list">
+                                    <div class="activity-item"><div class="activity-icon bg-success"><i class="ri-check-line"></i></div><div class="activity-content"><div class="title">Budi Santoso</div><div class="desc">Gate A - VIP</div></div><div class="activity-time">Baru saja</div></div>
+                                    <div class="activity-item"><div class="activity-icon bg-success"><i class="ri-check-line"></i></div><div class="activity-content"><div class="title">Siti Aminah</div><div class="desc">Gate B - Regular</div></div><div class="activity-time">1m lalu</div></div>
+                                    <div class="activity-item"><div class="activity-icon bg-success"><i class="ri-check-line"></i></div><div class="activity-content"><div class="title">Andi Wijaya</div><div class="desc">Gate C - General</div></div><div class="activity-time">2m lalu</div></div>
+                                    <div class="activity-item"><div class="activity-icon bg-danger"><i class="ri-close-line"></i></div><div class="activity-content"><div class="title">QR Invalid</div><div class="desc">Gate B - QR sudah digunakan</div></div><div class="activity-time">3m lalu</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REPORTS -->
+                <div class="section" id="section-report-sales">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-line-chart-line"></i> Laporan Penjualan Tiket</div>
+                            <div style="display:flex; gap:10px;">
+                                <select class="form-control" style="width:auto;"><option>Semua Event</option><option>Music Festival</option><option>Konser Rhoma</option></select>
+                                <button class="btn btn-secondary"><i class="ri-file-pdf-line"></i> PDF</button>
+                                <button class="btn btn-secondary"><i class="ri-file-excel-2-line"></i> Excel</button>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="height:350px;"><canvas id="reportSalesChart"></canvas></div>
+                        <div class="table-wrapper" style="margin-top:20px;">
+                            <table>
+                                <thead><tr><th>Tanggal</th><th>Tiket Terjual</th><th>Omzet</th><th>Pembeli Baru</th></tr></thead>
+                                <tbody>
+                                    <tr><td>15 Jul 2025</td><td>124</td><td>Rp 24,5 Jt</td><td>87</td></tr>
+                                    <tr><td>14 Jul 2025</td><td>98</td><td>Rp 18,2 Jt</td><td>72</td></tr>
+                                    <tr><td>13 Jul 2025</td><td>156</td><td>Rp 32,1 Jt</td><td>124</td></tr>
+                                    <tr><td>12 Jul 2025</td><td>87</td><td>Rp 15,8 Jt</td><td>65</td></tr>
+                                    <tr><td>11 Jul 2025</td><td>112</td><td>Rp 21,4 Jt</td><td>89</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-report-revenue">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-money-dollar-circle-line"></i> Laporan Omzet</div>
+                            <button class="btn btn-secondary"><i class="ri-download-2-line"></i> Ekspor</button>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-icon bg-success"><i class="ri-money-dollar-circle-line"></i></div><div class="stat-label">Omzet Hari Ini</div><div class="stat-value">Rp 12,4 Jt</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-primary"><i class="ri-calendar-line"></i></div><div class="stat-label">Omzet Minggu Ini</div><div class="stat-value">Rp 87,2 Jt</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-info"><i class="ri-calendar-check-line"></i></div><div class="stat-label">Omzet Bulan Ini</div><div class="stat-value">Rp 247,5 Jt</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-warning"><i class="ri-funds-line"></i></div><div class="stat-label">Omzet Total</div><div class="stat-value">Rp 1,2 M</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-report-quota">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-pie-chart-line"></i> Laporan Sisa Kuota</div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Event</th><th>Tipe Tiket</th><th>Total Kuota</th><th>Terjual</th><th>Sisa</th><th>Persentase</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Music Festival</td><td>Regular</td><td>2000</td><td>1240</td><td>760</td><td><div class="progress-bar" style="width:150px; display:inline-block;"><div class="progress-fill" style="width:62%"></div></div> 62%</td></tr>
+                                    <tr><td>Music Festival</td><td>VIP</td><td>500</td><td>380</td><td>120</td><td><div class="progress-bar" style="width:150px; display:inline-block;"><div class="progress-fill" style="width:76%"></div></div> 76%</td></tr>
+                                    <tr><td>Music Festival</td><td>VVIP</td><td>100</td><td>95</td><td>5</td><td><div class="progress-bar" style="width:150px; display:inline-block;"><div class="progress-fill" style="width:95%; background:var(--danger);"></div></div> 95%</td></tr>
+                                    <tr><td>Konser Rhoma</td><td>Festival</td><td>1500</td><td>890</td><td>610</td><td><div class="progress-bar" style="width:150px; display:inline-block;"><div class="progress-fill" style="width:59%"></div></div> 59%</td></tr>
+                                    <tr><td>Konser Rhoma</td><td>Tribun A</td><td>400</td><td>245</td><td>155</td><td><div class="progress-bar" style="width:150px; display:inline-block;"><div class="progress-fill" style="width:61%"></div></div> 61%</td></tr>
+                                    <tr><td>EDM Night</td><td>General</td><td>1000</td><td>654</td><td>346</td><td><div class="progress-bar" style="width:150px; display:inline-block;"><div class="progress-fill" style="width:65%"></div></div> 65%</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-report-visitors">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-team-line"></i> Laporan Data Pengunjung</div>
+                            <button class="btn btn-secondary"><i class="ri-file-excel-2-line"></i> Ekspor</button>
+                        </div>
+                        <div class="grid-3">
+                            <div class="stat-card"><div class="stat-icon bg-primary"><i class="ri-team-line"></i></div><div class="stat-label">Total Pengunjung</div><div class="stat-value">2.847</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-success"><i class="ri-user-add-line"></i></div><div class="stat-label">Pengunjung Baru</div><div class="stat-value">412</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-info"><i class="ri-repeat-line"></i></div><div class="stat-label">Repeat Buyer</div><div class="stat-value">23%</div></div>
+                        </div>
+                        <div class="chart-container" style="margin-top:20px;"><canvas id="visitorsChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-report-checkin">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-calendar-check-line"></i> Laporan Check-in</div>
+                            <button class="btn btn-secondary"><i class="ri-download-2-line"></i> Ekspor</button>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-icon bg-success"><i class="ri-check-double-line"></i></div><div class="stat-label">Total Check-in</div><div class="stat-value">1.247</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-warning"><i class="ri-time-line"></i></div><div class="stat-label">Belum Check-in</div><div class="stat-value">2.600</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-danger"><i class="ri-close-line"></i></div><div class="stat-label">Invalid QR</div><div class="stat-value">12</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-info"><i class="ri-percent-line"></i></div><div class="stat-label">Attendance Rate</div><div class="stat-value">32,4%</div></div>
+                        </div>
+                        <div class="chart-container" style="margin-top:20px;"><canvas id="checkinChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-export">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-download-2-line"></i> Ekspor Data</div>
+                        </div>
+                        <div class="info-box">
+                            <i class="ri-information-line"></i>
+                            <div>Pilih data yang ingin diekspor ke format Excel/CSV. Data akan diproses dan dikirim ke email Anda.</div>
+                        </div>
+                        <div class="grid-3">
+                            <div class="stat-card" style="cursor:pointer;" onclick="showToast('Mengunduh data pengunjung...', 'info')">
+                                <div class="stat-icon bg-primary"><i class="ri-team-line"></i></div>
+                                <div class="stat-label">Data Pengunjung</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Nama, WA, Email, NIK, Instansi</div>
+                                <button class="btn btn-primary btn-sm" style="margin-top:10px;"><i class="ri-file-excel-2-line"></i> Ekspor Excel</button>
+                            </div>
+                            <div class="stat-card" style="cursor:pointer;" onclick="showToast('Mengunduh rekap transaksi...', 'info')">
+                                <div class="stat-icon bg-success"><i class="ri-exchange-line"></i></div>
+                                <div class="stat-label">Rekap Transaksi</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Semua transaksi dengan detail lengkap</div>
+                                <button class="btn btn-primary btn-sm" style="margin-top:10px;"><i class="ri-file-excel-2-line"></i> Ekspor Excel</button>
+                            </div>
+                            <div class="stat-card" style="cursor:pointer;" onclick="showToast('Mengunduh laporan penjualan...', 'info')">
+                                <div class="stat-icon bg-info"><i class="ri-line-chart-line"></i></div>
+                                <div class="stat-label">Laporan Penjualan</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Penjualan per hari/event</div>
+                                <button class="btn btn-primary btn-sm" style="margin-top:10px;"><i class="ri-file-excel-2-line"></i> Ekspor Excel</button>
+                            </div>
+                            <div class="stat-card" style="cursor:pointer;" onclick="showToast('Mengunduh data check-in...', 'info')">
+                                <div class="stat-icon bg-warning"><i class="ri-calendar-check-line"></i></div>
+                                <div class="stat-label">Data Check-in</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Rekap kehadiran pengunjung</div>
+                                <button class="btn btn-primary btn-sm" style="margin-top:10px;"><i class="ri-file-excel-2-line"></i> Ekspor Excel</button>
+                            </div>
+                            <div class="stat-card" style="cursor:pointer;" onclick="showToast('Mengunduh data refund...', 'info')">
+                                <div class="stat-icon bg-danger"><i class="ri-refund-2-line"></i></div>
+                                <div class="stat-label">Data Refund</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Semua transaksi refund</div>
+                                <button class="btn btn-primary btn-sm" style="margin-top:10px;"><i class="ri-file-excel-2-line"></i> Ekspor Excel</button>
+                            </div>
+                            <div class="stat-card" style="cursor:pointer;" onclick="showToast('Mengunduh data pengaduan...', 'info')">
+                                <div class="stat-icon bg-accent"><i class="ri-customer-service-2-line"></i></div>
+                                <div class="stat-label">Data Pengaduan</div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Semua pengaduan masuk</div>
+                                <button class="btn btn-primary btn-sm" style="margin-top:10px;"><i class="ri-file-excel-2-line"></i> Ekspor Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VOUCHERS -->
+                <div class="section" id="section-vouchers">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-coupon-3-line"></i> Manajemen Voucher & Promo</div>
+                            <button class="btn btn-gradient"><i class="ri-add-line"></i> Buat Voucher</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Kode</th><th>Diskon</th><th>Event</th><th>Kuota</th><th>Terpakai</th><th>Berlaku</th><th>Status</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>MADIUN50</strong></td><td>50%</td><td>Semua Event</td><td>100</td><td>42</td><td>s/d 31 Ags 2025</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>NEWUSER</strong></td><td>10%</td><td>Semua Event</td><td>500</td><td>128</td><td>s/d 31 Des 2025</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>MADIUN25</strong></td><td>25%</td><td>Music Festival</td><td>200</td><td>87</td><td>s/d 14 Ags 2025</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td><strong>EARLYBIRD</strong></td><td>Rp 25.000</td><td>Konser Rhoma</td><td>300</td><td>300</td><td>s/d 30 Jun 2025</td><td><span class="badge badge-muted">Expired</span></td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td><strong>DISKON50</strong></td><td>50%</td><td>EDM Night</td><td>50</td><td>12</td><td>s/d 29 Ags 2025</td><td><span class="badge badge-warning">Draft</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMPLAINTS -->
+                <div class="section" id="section-complaints">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-customer-service-2-line"></i> Manajemen Pengaduan</div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-icon bg-danger"><i class="ri-alarm-warning-line"></i></div><div class="stat-label">Pengaduan Baru</div><div class="stat-value">3</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-warning"><i class="ri-time-line"></i></div><div class="stat-label">Dalam Proses</div><div class="stat-value">5</div></div>
+                            <div class="stat-card"><div class="stat-icon bg-success"><i class="ri-check-double-line"></i></div><div class="stat-label">Selesai</div><div class="stat-value">47</div></div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID</th><th>Pelapor</th><th>Subjek</th><th>Prioritas</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td>#CMP-102</td><td>Hadi Prasetyo</td><td>Tiket tidak diterima via email</td><td><span class="badge badge-danger">High</span></td><td><span class="badge badge-warning">Proses</span></td><td>15 Jul 2025</td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button> <button class="btn btn-icon"><i class="ri-reply-line"></i></button></td></tr>
+                                    <tr><td>#CMP-101</td><td>Nina Kurnia</td><td>QR Code tidak bisa di-scan</td><td><span class="badge badge-danger">High</span></td><td><span class="badge badge-warning">Proses</span></td><td>14 Jul 2025</td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button> <button class="btn btn-icon"><i class="ri-reply-line"></i></button></td></tr>
+                                    <tr><td>#CMP-100</td><td>Yanto Wibowo</td><td>Salah pilih tanggal event</td><td><span class="badge badge-warning">Medium</span></td><td><span class="badge badge-info">Baru</span></td><td>14 Jul 2025</td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button> <button class="btn btn-icon"><i class="ri-reply-line"></i></button></td></tr>
+                                    <tr><td>#CMP-99</td><td>Ratna Sari</td><td>Pembayaran double</td><td><span class="badge badge-danger">High</span></td><td><span class="badge badge-success">Selesai</span></td><td>13 Jul 2025</td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                    <tr><td>#CMP-98</td><td>Dimas Anggara</td><td>Request refund</td><td><span class="badge badge-warning">Medium</span></td><td><span class="badge badge-success">Selesai</span></td><td>12 Jul 2025</td><td><button class="btn btn-icon"><i class="ri-eye-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS -->
+                <div class="section" id="section-setting-brand">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-palette-line"></i> Pengaturan Branding, Tema & Logo</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Aplikasi</label>
+                                <input type="text" class="form-control" value="MadiunTix">
+                            </div>
+                            <div class="form-group">
+                                <label>Tagline</label>
+                                <input type="text" class="form-control" value="Tiket Digital Terpercaya di Madiun">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Logo Aplikasi</label>
+                            <input type="file" class="form-control">
+                            <div style="margin-top:10px; display:flex; align-items:center; gap:12px;">
+                                <div style="width:60px; height:60px; background:linear-gradient(135deg, var(--primary), var(--secondary)); border-radius:14px; display:flex; align-items:center; justify-content:center; color:white; font-size:26px;"><i class="ri-ticket-2-fill"></i></div>
+                                <div style="font-size:12px; color:var(--text-muted);">Logo saat ini<br>Disarankan: 512x512px, PNG</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Favicon</label>
+                            <input type="file" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi SEO</label>
+                            <textarea class="form-control">Platform tiket digital terpercaya untuk konser, festival, seminar di Madiun.</textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-primary" onclick="showToast('Branding berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-setting-color">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-color-filter-line"></i> Pengaturan Warna Aplikasi</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Warna Primer</label>
+                            <div class="color-swatches">
+                                <div class="color-swatch active" style="background:#6C3CE1;">#6C3CE1</div>
+                                <div class="color-swatch" style="background:#3B82F6;">#3B82F6</div>
+                                <div class="color-swatch" style="background:#10B981;">#10B981</div>
+                                <div class="color-swatch" style="background:#EC4899;">#EC4899</div>
+                                <div class="color-swatch" style="background:#F59E0B;">#F59E0B</div>
+                                <div class="color-swatch" style="background:#EF4444;">#EF4444</div>
+                                <div class="color-swatch" style="background:#06B6D4;">#06B6D4</div>
+                                <div class="color-swatch" style="background:#8B5CF6;">#8B5CF6</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Warna Sekunder</label>
+                            <div class="color-swatches">
+                                <div class="color-swatch active" style="background:#EC4899;">#EC4899</div>
+                                <div class="color-swatch" style="background:#F59E0B;">#F59E0B</div>
+                                <div class="color-swatch" style="background:#06B6D4;">#06B6D4</div>
+                                <div class="color-swatch" style="background:#10B981;">#10B981</div>
+                                <div class="color-swatch" style="background:#8B5CF6;">#8B5CF6</div>
+                                <div class="color-swatch" style="background:#EF4444;">#EF4444</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tema Aplikasi</label>
+                            <select class="form-control">
+                                <option>Dark Mode (Default)</option>
+                                <option>Light Mode</option>
+                                <option>Auto (Ikuti Sistem)</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-primary" onclick="showToast('Warna berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-setting-info">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-information-line"></i> Pengaturan Halaman Informasi</div>
+                        </div>
+                        <div class="tabs">
+                            <button class="tab active">Tentang Kami</button>
+                            <button class="tab">Kebijakan Privasi</button>
+                            <button class="tab">Kontak</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Judul Halaman</label>
+                            <input type="text" class="form-control" value="Tentang MadiunTix">
+                        </div>
+                        <div class="form-group">
+                            <label>Konten</label>
+                            <textarea class="form-control" style="min-height:200px;">MadiunTix adalah platform tiket digital terpercaya yang melayani berbagai event di Kota Madiun dan sekitarnya. Kami menyediakan layanan pemesanan tiket yang mudah, cepat, dan aman untuk konser, festival, seminar, dan berbagai event lainnya.</textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-primary" onclick="showToast('Informasi berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-setting-terms">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-file-text-line"></i> Pengaturan Syarat & Ketentuan</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Terakhir Diperbarui</label>
+                            <input type="date" class="form-control" value="2025-07-01">
+                        </div>
+                        <div class="form-group">
+                            <label>Konten Syarat & Ketentuan</label>
+                            <textarea class="form-control" style="min-height:300px;">1. Tiket yang telah dibeli tidak dapat dikembalikan (non-refundable) kecuali dalam kondisi tertentu.
+2. Pembeli wajib menunjukkan e-tiket (QR Code) saat masuk venue.
+3. Satu QR Code hanya dapat digunakan satu kali.
+4. Dilarang membawa makanan dan minuman dari luar ke area event.
+5. Anak di bawah 5 tahun gratis dengan pendamping.
+6. Organizer berhak menolak masuk jika pengunjung melanggar aturan.
+7. Semua informasi yang diberikan harus valid dan benar.
+8. MadiunTix tidak bertanggung jawab atas kehilangan barang pribadi.</textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-primary" onclick="showToast('S&K berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-setting-faq">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-question-line"></i> Pengaturan FAQ</div>
+                            <button class="btn btn-gradient"><i class="ri-add-line"></i> Tambah FAQ</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Pertanyaan</th><th>Kategori</th><th>Status</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Bagaimana cara membeli tiket?</td><td>Pembelian</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>Metode pembayaran apa saja yang tersedia?</td><td>Pembayaran</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>Apakah tiket bisa di-refund?</td><td>Refund</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>Bagaimana jika QR Code tidak bisa di-scan?</td><td>Troubleshoot</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>Apakah anak-anak perlu tiket?</td><td>Umum</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>Bagaimana cara menggunakan kode promo?</td><td>Pembelian</td><td><span class="badge badge-success">Aktif</span></td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-setting-rundown">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-list-ordered"></i> Pengaturan Rundown Acara</div>
+                            <button class="btn btn-gradient"><i class="ri-add-line"></i> Tambah Item</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Pilih Event</label>
+                            <select class="form-control">
+                                <option>Madiun Music Festival 2025</option>
+                                <option>Konser Rhoma Irama & Soneta</option>
+                            </select>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Waktu</th><th>Durasi</th><th>Acara</th><th>Pengisi</th><th>Stage</th><th>Aksi</th></tr></thead>
+                                <tbody>
+                                    <tr><td>16:00</td><td>30m</td><td>Opening Ceremony</td><td>MC Event</td><td>Main</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>16:30</td><td>60m</td><td>Local Band</td><td>Band Madiun</td><td>Main</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>17:30</td><td>60m</td><td>Headliner 1</td><td>Sheila on 7</td><td>Main</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>19:00</td><td>90m</td><td>Headliner 2</td><td>Dewa 19</td><td>Main</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>20:30</td><td>90m</td><td>Headliner 3</td><td>Noah</td><td>Main</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                    <tr><td>22:00</td><td>60m</td><td>After Party</td><td>DJ Lokal</td><td>Side</td><td><button class="btn btn-icon"><i class="ri-edit-line"></i></button> <button class="btn btn-icon"><i class="ri-delete-bin-line"></i></button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-setting-notif">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-notification-3-line"></i> Template Notifikasi</div>
+                        </div>
+                        <div class="tabs">
+                            <button class="tab active">WhatsApp</button>
+                            <button class="tab">Email</button>
+                            <button class="tab">Push Notification</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Template: Konfirmasi Pembelian</label>
+                            <textarea class="form-control" style="min-height:120px;">Halo {nama}, terima kasih telah membeli tiket {event} di MadiunTix! 🎉
+
+Detail pesanan:
+🎫 Event: {event}
+📅 Tanggal: {tanggal}
+📍 Lokasi: {lokasi}
+🎟️ Tipe: {tipe_tiket} x {qty}
+💰 Total: Rp {total}
+🆔 Order ID: {order_id}
+
+E-tiket telah dikirim ke email Anda. Tunjukkan QR Code saat masuk venue.
+
+Salam,
+Tim MadiunTix</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Template: Pengingat Event (H-1)</label>
+                            <textarea class="form-control" style="min-height:120px;">Halo {nama}, jangan lupa! Event {event} akan dilaksanakan besok! 🎊
+
+📅 {tanggal}
+⏰ {waktu}
+📍 {lokasi}
+
+Pastikan e-tiket sudah siap. Sampai jumpa! 🎉</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Template: Refund Approved</label>
+                            <textarea class="form-control" style="min-height:100px;">Halo {nama}, permintaan refund Anda untuk order {order_id} telah disetujui. Dana sebesar Rp {amount} akan dikembalikan dalam 1-3 hari kerja.</textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-secondary">Preview</button>
+                            <button class="btn btn-primary" onclick="showToast('Template berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-setting-page">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-pages-line"></i> Pratinjau Halaman Event</div>
+                            <select class="form-control" style="width:auto;">
+                                <option>Madiun Music Festival 2025</option>
+                                <option>Konser Rhoma Irama & Soneta</option>
+                            </select>
+                        </div>
+                        <div class="info-box">
+                            <i class="ri-information-line"></i>
+                            <div>Berikut adalah pratinjau halaman event yang akan dilihat oleh pengguna di aplikasi MadiunTix.</div>
+                        </div>
+                        <div style="background:var(--dark-3); border-radius:14px; overflow:hidden; border:1px solid var(--glass-border);">
+                            <div style="height:200px; background:linear-gradient(135deg, #6C3CE1, #EC4899); display:flex; align-items:center; justify-content:center; font-size:60px;">🎵</div>
+                            <div style="padding:20px;">
+                                <div style="display:inline-block; background:rgba(239,68,68,0.8); padding:4px 10px; border-radius:6px; font-size:11px; margin-bottom:10px;">🔥 Hot</div>
+                                <h2 style="font-size:22px; margin-bottom:8px;">Madiun Music Festival 2025</h2>
+                                <div style="font-size:13px; color:var(--text-muted); margin-bottom:6px;"><i class="ri-calendar-line" style="color:var(--primary-light);"></i> 15 Agustus 2025 • 16:00 - 23:00 WIB</div>
+                                <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px;"><i class="ri-map-pin-line" style="color:var(--primary-light);"></i> Alun-Alun Madiun</div>
+                                <p style="font-size:13px; color:var(--text-muted); line-height:1.7; margin-bottom:20px;">Festival musik terbesar di Madiun! Dimeriahkan oleh artis-artis top Indonesia...</p>
+                                <div style="display:flex; gap:10px;">
+                                    <button class="btn btn-gradient">Pesan Sekarang</button>
+                                    <button class="btn btn-secondary">Bagikan</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROFILE -->
+                <div class="section" id="section-profile">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-user-line"></i> Profil Organizer</div>
+                        </div>
+                        <div style="display:flex; gap:20px; align-items:center; margin-bottom:24px; flex-wrap:wrap;">
+                            <div style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--secondary)); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:700;">MD</div>
+                            <div>
+                                <h3 style="font-size:18px;">Madiun Event Organizer</h3>
+                                <p style="color:var(--text-muted); font-size:13px;">organizer@madiuntix.id • Terdaftar sejak Jan 2024</p>
+                                <span class="badge badge-success" style="margin-top:6px;">Verified Organizer</span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Organizer</label>
+                                <input type="text" class="form-control" value="Madiun Event Organizer">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" class="form-control" value="organizer@madiuntix.id">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>No. Telepon</label>
+                                <input type="tel" class="form-control" value="+62 812-3456-7890">
+                            </div>
+                            <div class="form-group">
+                                <label>WhatsApp</label>
+                                <input type="tel" class="form-control" value="+62 812-3456-7890">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Alamat</label>
+                            <textarea class="form-control">Jl. Panglima Sudirman No. 123, Kota Madiun, Jawa Timur</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi Organizer</label>
+                            <textarea class="form-control">Penyelenggara event profesional di Kota Madiun sejak 2020. Fokus pada konser musik, festival budaya, dan seminar edukatif.</textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-primary" onclick="showToast('Profil berhasil disimpan!', 'success')"><i class="ri-save-line"></i> Simpan</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-password">
+                    <div class="card" style="max-width:500px;">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-lock-line"></i> Ubah Password</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Password Lama</label>
+                            <input type="password" class="form-control" placeholder="••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label>Password Baru</label>
+                            <input type="password" class="form-control" placeholder="Minimal 8 karakter">
+                        </div>
+                        <div class="form-group">
+                            <label>Konfirmasi Password Baru</label>
+                            <input type="password" class="form-control" placeholder="Ulangi password baru">
+                        </div>
+                        <div class="info-box">
+                            <i class="ri-shield-keyhole-line"></i>
+                            <div>Gunakan password yang kuat dengan kombinasi huruf besar, huruf kecil, angka, dan simbol.</div>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn btn-primary" onclick="showToast('Password berhasil diubah!', 'success')"><i class="ri-save-line"></i> Ubah Password</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="section-activity-log">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="ri-history-line"></i> Riwayat Aktivitas Admin</div>
+                            <select class="form-control" style="width:auto;">
+                                <option>7 Hari Terakhir</option>
+                                <option>30 Hari Terakhir</option>
+                                <option>Semua</option>
+                            </select>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Waktu</th><th>Admin</th><th>Aktivitas</th><th>Detail</th><th>IP Address</th></tr></thead>
+                                <tbody>
+                                    <tr><td>15 Jul 2025, 14:32</td><td>admin@madiuntix.id</td><td><span class="badge badge-success">Create</span></td><td>Membuat event baru "EDM Night"</td><td>192.168.1.10</td></tr>
+                                    <tr><td>15 Jul 2025, 13:18</td><td>admin@madiuntix.id</td><td><span class="badge badge-info">Update</span></td><td>Mengupdate harga tiket VIP Music Festival</td><td>192.168.1.10</td></tr>
+                                    <tr><td>15 Jul 2025, 11:45</td><td>admin@madiuntix.id</td><td><span class="badge badge-warning">Approve</span></td><td>Menyetujui refund #RFD-199</td><td>192.168.1.10</td></tr>
+                                    <tr><td>14 Jul 2025, 16:20</td><td>admin@madiuntix.id</td><td><span class="badge badge-primary">Login</span></td><td>Login berhasil</td><td>192.168.1.10</td></tr>
+                                    <tr><td>14 Jul 2025, 15:10</td><td>admin@madiuntix.id</td><td><span class="badge badge-info">Update</span></td><td>Mengubah rundown Konser Rhoma</td><td>192.168.1.10</td></tr>
+                                    <tr><td>14 Jul 2025, 10:30</td><td>admin@madiuntix.id</td><td><span class="badge badge-danger">Delete</span></td><td>Menghapus voucher kadaluarsa</td><td>192.168.1.10</td></tr>
+                                    <tr><td>13 Jul 2025, 17:45</td><td>admin@madiuntix.id</td><td><span class="badge badge-success">Create</span></td><td>Menambah petugas scanner baru</td><td>192.168.1.10</td></tr>
+                                    <tr><td>13 Jul 2025, 14:20</td><td>admin@madiuntix.id</td><td><span class="badge badge-info">Update</span></td><td>Mengubah template notifikasi WhatsApp</td><td>192.168.1.10</td></tr>
+                                    <tr><td>13 Jul 2025, 09:15</td><td>admin@madiuntix.id</td><td><span class="badge badge-primary">Login</span></td><td>Login berhasil</td><td>192.168.1.10</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Category -->
+    <div class="modal-overlay" id="modalCategory">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Tambah Kategori Baru</h3>
+                <button class="modal-close" onclick="closeModal('modalCategory')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nama Kategori</label>
+                    <input type="text" class="form-control" placeholder="Contoh: Workshop">
+                </div>
+                <div class="form-group">
+                    <label>Icon (Remix Icon)</label>
+                    <input type="text" class="form-control" placeholder="ri-workshop-line">
+                </div>
+                <div class="form-group">
+                    <label>Warna</label>
+                    <input type="color" class="form-control" value="#6C3CE1" style="height:45px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalCategory')">Batal</button>
+                <button class="btn btn-primary" onclick="closeModal('modalCategory'); showToast('Kategori berhasil ditambahkan!', 'success')">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="ri-check-line"></i>
+        <span id="toastMessage">Message</span>
+    </div>
+
+    <script>
+        // Section Titles
+        const titles = {
+            'dashboard': { t: 'Dashboard', s: 'Selamat datang kembali, Organizer!' },
+            'events': { t: 'Manajemen Acara', s: 'Kelola semua event Anda' },
+            'event-add': { t: 'Tambah Event Baru', s: 'Buat event baru untuk pengguna' },
+            'categories': { t: 'Kategori Event', s: 'Kelola kategori event' },
+            'schedule': { t: 'Jadwal & Rundown', s: 'Atur rundown acara' },
+            'venue': { t: 'Lokasi Event', s: 'Kelola venue dan lokasi' },
+            'tickets': { t: 'Manajemen Tiket', s: 'Kelola jenis tiket event' },
+            'ticket-add': { t: 'Tambah Tiket', s: 'Buat tiket baru untuk event' },
+            'ticket-preview': { t: 'Pratinjau Tiket', s: 'Lihat tampilan tiket digital' },
+            'orders': { t: 'Manajemen Pesanan', s: 'Kelola semua pesanan tiket' },
+            'transactions': { t: 'Riwayat Transaksi', s: 'Lihat semua transaksi' },
+            'visitors': { t: 'Database Pengunjung', s: 'Data lengkap pengunjung' },
+            'custom-form': { t: 'Custom Form', s: 'Kelola form pendaftaran' },
+            'payment': { t: 'Manajemen Pembayaran', s: 'Kelola metode pembayaran' },
+            'refund': { t: 'Manajemen Refund', s: 'Kelola permintaan refund' },
+            'qr-tickets': { t: 'QR Tiket', s: 'Kelola QR Code tiket' },
+            'officers': { t: 'Petugas Scanner & Gate', s: 'Kelola petugas lapangan' },
+            'checkin': { t: 'Monitoring Check-in', s: 'Pantau check-in realtime' },
+            'report-sales': { t: 'Laporan Penjualan', s: 'Analisis penjualan tiket' },
+            'report-revenue': { t: 'Laporan Omzet', s: 'Rekap pendapatan' },
+            'report-quota': { t: 'Laporan Sisa Kuota', s: 'Status kuota tiket' },
+            'report-visitors': { t: 'Laporan Pengunjung', s: 'Analisis data pengunjung' },
+            'report-checkin': { t: 'Laporan Check-in', s: 'Rekap kehadiran' },
+            'export': { t: 'Ekspor Data', s: 'Download data ke Excel/CSV' },
+            'vouchers': { t: 'Voucher & Promo', s: 'Kelola kode promo' },
+            'complaints': { t: 'Pengaduan', s: 'Kelola pengaduan pengguna' },
+            'setting-brand': { t: 'Branding & Logo', s: 'Pengaturan identitas brand' },
+            'setting-color': { t: 'Warna Aplikasi', s: 'Kustomisasi tema warna' },
+            'setting-info': { t: 'Halaman Informasi', s: 'Konten halaman info' },
+            'setting-terms': { t: 'Syarat & Ketentuan', s: 'Konten S&K aplikasi' },
+            'setting-faq': { t: 'FAQ', s: 'Kelola pertanyaan umum' },
+            'setting-rundown': { t: 'Rundown Acara', s: 'Susunan acara event' },
+            'setting-notif': { t: 'Template Notifikasi', s: 'Template WA & Email' },
+            'setting-page': { t: 'Pratinjau Halaman', s: 'Lihat tampilan halaman event' },
+            'profile': { t: 'Profil Organizer', s: 'Kelola data profil' },
+            'password': { t: 'Ubah Password', s: 'Keamanan akun' },
+            'activity-log': { t: 'Riwayat Aktivitas', s: 'Log aktivitas admin' }
+        };
+
+        function showSection(id, menuItem) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            const sec = document.getElementById('section-' + id);
+            if (sec) sec.classList.add('active');
+            
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            if (menuItem) menuItem.classList.add('active');
+
+            const info = titles[id] || { t: 'Dashboard', s: '' };
+            document.getElementById('pageTitle').textContent = info.t;
+            document.getElementById('pageSubtitle').textContent = info.s;
+
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.remove('active');
+            }
+
+            // Init charts when needed
+            setTimeout(() => {
+                if (id === 'dashboard') initDashboardCharts();
+                if (id === 'report-sales') initReportSalesChart();
+                if (id === 'report-revenue') initRevenueChart();
+                if (id === 'report-visitors') initVisitorsChart();
+                if (id === 'report-checkin') initCheckinChart();
+            }, 100);
+
+            window.scrollTo(0, 0);
+        }
+
+        function toggleSubmenu(item) {
+            const submenu = item.nextElementSibling;
+            if (submenu && submenu.classList.contains('submenu')) {
+                submenu.classList.toggle('open');
+                item.classList.toggle('expanded');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toast.className = 'toast ' + type;
+            toastMsg.textContent = msg;
+            const icon = toast.querySelector('i');
+            if (type === 'success') icon.className = 'ri-check-line';
+            else if (type === 'error') icon.className = 'ri-error-warning-line';
+            else icon.className = 'ri-information-line';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Render Events Grid
+        const eventsData = [
+            { name: "Madiun Music Festival 2025", date: "15 Agustus 2025", location: "Alun-Alun Madiun", gradient: "linear-gradient(135deg, #6C3CE1, #EC4899)", emoji: "🎵", status: "Aktif", sold: 1240, quota: 2600 },
+            { name: "Konser Rhoma Irama & Soneta", date: "22 September 2025", location: "GOR Ki Mageti", gradient: "linear-gradient(135deg, #F59E0B, #EF4444)", emoji: "🎤", status: "Aktif", sold: 890, quota: 2300 },
+            { name: "Seminar Digital Marketing", date: "5 Oktober 2025", location: "Hotel Aston Madiun", gradient: "linear-gradient(135deg, #06B6D4, #3B82F6)", emoji: "💼", status: "Aktif", sold: 180, quota: 300 },
+            { name: "Persik vs Arema FC", date: "10 Agustus 2025", location: "Stadion Wilis", gradient: "linear-gradient(135deg, #10B981, #059669)", emoji: "⚽", status: "Aktif", sold: 520, quota: 3000 },
+            { name: "Stand Up Comedy Night", date: "28 Juli 2025", location: "Java Jazz Cafe", gradient: "linear-gradient(135deg, #EF4444, #F97316)", emoji: "🎭", status: "Aktif", sold: 95, quota: 150 },
+            { name: "Reog Ponorogo Night", date: "17 Agustus 2025", location: "Taman Kota", gradient: "linear-gradient(135deg, #8B5CF6, #A855F7)", emoji: "🎪", status: "Aktif", sold: 345, quota: 800 },
+            { name: "EDM Night: Bass Drop", date: "30 Agustus 2025", location: "Exhibition Hall", gradient: "linear-gradient(135deg, #EC4899, #8B5CF6)", emoji: "🎧", status: "Segera", sold: 654, quota: 1500 },
+            { name: "Workshop Photography", date: "12 September 2025", location: "Co-Working Space", gradient: "linear-gradient(135deg, #14B8A6, #06B6D4)", emoji: "📸", status: "Aktif", sold: 42, quota: 50 },
+            { name: "Food & Music Festival", date: "20 September 2025", location: "CSR Madiun", gradient: "linear-gradient(135deg, #F59E0B, #10B981)", emoji: "🍜", status: "Aktif", sold: 280, quota: 1000 }
+        ];
+
+        function renderEvents() {
+            const grid = document.getElementById('eventGrid');
+            grid.innerHTML = eventsData.map(e => {
+                const pct = Math.round((e.sold / e.quota) * 100);
+                return `
+                <div class="event-card">
+                    <div class="event-card-img" style="background: ${e.gradient};">
+                        ${e.emoji}
+                        <div class="event-status">
+                            <span class="badge ${e.status === 'Aktif' ? 'badge-success' : 'badge-warning'}">${e.status}</span>
+                        </div>
+                    </div>
+                    <div class="event-card-body">
+                        <h4>${e.name}</h4>
+                        <div class="meta"><i class="ri-calendar-line"></i> ${e.date}</div>
+                        <div class="meta"><i class="ri-map-pin-line"></i> ${e.location}</div>
+                        <div class="meta"><i class="ri-ticket-line"></i> ${e.sold} / ${e.quota} terjual (${pct}%)</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+                    </div>
+                    <div class="event-card-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="showToast('Membuka detail event...', 'info')"><i class="ri-eye-line"></i> Detail</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showToast('Mode edit aktif', 'info')"><i class="ri-edit-line"></i> Edit</button>
+                        <button class="btn btn-secondary btn-sm" onclick="showToast('Event berhasil diduplikasi!', 'success')"><i class="ri-file-copy-line"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Charts
+        let salesChartInstance = null;
+        let categoryChartInstance = null;
+
+        function initDashboardCharts() {
+            const salesCtx = document.getElementById('salesChart');
+            if (!salesCtx) return;
+            if (salesChartInstance) salesChartInstance.destroy();
+
+            salesChartInstance = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                    datasets: [{
+                        label: 'Tiket Terjual',
+                        data: [124, 98, 156, 87, 112, 189, 145],
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#8B5CF6',
+                        pointRadius: 4
+                    }, {
+                        label: 'Omzet (Jt)',
+                        data: [24, 18, 32, 15, 21, 38, 29],
+                        borderColor: '#EC4899',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#EC4899',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94A3B8', font: { family: 'Poppins' } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+
+            const catCtx = document.getElementById('categoryChart');
+            if (!catCtx) return;
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            categoryChartInstance = new Chart(catCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Konser', 'Festival', 'Seminar', 'Olahraga', 'Teater', 'Komedi'],
+                    datasets: [{
+                        data: [24, 18, 15, 12, 8, 10],
+                        backgroundColor: ['#EC4899', '#F59E0B', '#06B6D4', '#10B981', '#8B5CF6', '#EF4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94A3B8', font: { family: 'Poppins', size: 11 }, padding: 10 } }
+                    }
+                }
+            });
+        }
+
+        let reportSalesInstance = null;
+        function initReportSalesChart() {
+            const ctx = document.getElementById('reportSalesChart');
+            if (!ctx) return;
+            if (reportSalesInstance) reportSalesInstance.destroy();
+            reportSalesInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['11 Jul', '12 Jul', '13 Jul', '14 Jul', '15 Jul'],
+                    datasets: [{
+                        label: 'Tiket Terjual',
+                        data: [112, 87, 156, 98, 124],
+                        backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94A3B8' } } },
+                    scales: {
+                        x: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        let revenueInstance = null;
+        function initRevenueChart() {
+            const ctx = document.getElementById('revenueChart');
+            if (!ctx) return;
+            if (revenueInstance) revenueInstance.destroy();
+            revenueInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+                    datasets: [{
+                        label: 'Omzet (Juta Rp)',
+                        data: [120, 145, 180, 210, 195, 230, 247],
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#10B981',
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94A3B8' } } },
+                    scales: {
+                        x: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        let visitorsInstance = null;
+        function initVisitorsChart() {
+            const ctx = document.getElementById('visitorsChart');
+            if (!ctx) return;
+            if (visitorsInstance) visitorsInstance.destroy();
+            visitorsInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                    datasets: [{
+                        label: 'Pengunjung Baru',
+                        data: [45, 62, 78, 54, 89, 120, 95],
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderRadius: 8
+                    }, {
+                        label: 'Repeat Buyer',
+                        data: [12, 18, 22, 15, 28, 35, 24],
+                        backgroundColor: 'rgba(236, 72, 153, 0.8)',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94A3B8' } } },
+                    scales: {
+                        x: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        let checkinInstance = null;
+        function initCheckinChart() {
+            const ctx = document.getElementById('checkinChart');
+            if (!ctx) return;
+            if (checkinInstance) checkinInstance.destroy();
+            checkinInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'],
+                    datasets: [{
+                        label: 'Check-in per Jam',
+                        data: [45, 186, 287, 312, 245, 124, 48],
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#F59E0B',
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94A3B8' } } },
+                    scales: {
+                        x: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            renderEvents();
+            setTimeout(initDashboardCharts, 300);
+        });
+
+        // Color swatches clicka
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('color-swatch')) {
+                const parent = e.target.parentElement;
+                parent.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                e.target.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>
